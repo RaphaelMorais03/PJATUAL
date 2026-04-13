@@ -1,11 +1,6 @@
 // ============================================================
-//  Firebase — Configuração do projeto
-// ------------------------------------------------------------
-//  1. Crie um projeto em https://console.firebase.google.com
-//  2. Em Configurações do projeto > Seus apps > Web, registre um app
-//  3. Cole as credenciais abaixo, substituindo os valores placeholder
-//  4. Ative Authentication > Email/Senha
-//  5. Ative Cloud Firestore (modo produção) e cole as regras do README
+//  Firebase — Projeto PJATUAL
+//  Portal Amor Saúde Pirituba
 // ============================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -13,12 +8,12 @@ import { getAuth }       from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey:            "COLE_SUA_API_KEY_AQUI",
-  authDomain:        "seu-projeto.firebaseapp.com",
-  projectId:         "seu-projeto",
-  storageBucket:     "seu-projeto.appspot.com",
-  messagingSenderId: "000000000000",
-  appId:             "1:000000000000:web:abcdef123456"
+  apiKey:            "AIzaSyCxX6N4h62I3uyzq2r1FBDIUmXGwUoeafc",
+  authDomain:        "pjatual-f2f9e.firebaseapp.com",
+  projectId:         "pjatual-f2f9e",
+  storageBucket:     "pjatual-f2f9e.firebasestorage.app",
+  messagingSenderId: "242197649179",
+  appId:             "1:242197649179:web:c2216edcc15da45d7ea5be"
 };
 
 export const app  = initializeApp(firebaseConfig);
