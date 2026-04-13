@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fechamento — Amor Saúde Pirituba</title>
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .back-link{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-mid);font-weight:600;margin-bottom:14px;transition:color .15s;}
+    .back-link:hover{color:var(--primary);}
+
+    /* Steps */
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+    .step{
+      background:var(--surface);border:1.5px solid var(--border);
+      border-radius:14px;padding:16px 18px;
+      display:flex;align-items:center;gap:14px;
+      transition:all .2s;
+    }
+    .step-num{
+      width:36px;height:36px;border-radius:50%;
+      background:var(--bg);color:var(--text-soft);
+      display:grid;place-items:center;font-weight:800;font-size:14px;
+      flex-shrink:0;transition:all .2s;
+    }
+    .step-name{font-size:13px;font-weight:800;color:var(--text);}
+    .step-sub{font-size:11px;color:var(--text-soft);margin-top:2px;}
+    .step.active{border-color:var(--primary);background:var(--primary-soft);}
+    .step.active .step-num{background:var(--primary);color:white;}
+    .step.active .step-name{color:var(--primary);}
+    .step.done .step-num{background:var(--success);color:white;}
+    .step.done{border-color:#a7f3d0;}
+
+    .screen{display:none;}
+    .screen.active{display:block;}
+
+    .card-title{
+      font-size:16px;font-weight:800;
+      display:flex;align-items:center;gap:10px;
+      margin-bottom:20px;padding-bottom:14px;
+      border-bottom:1px solid var(--border);
+    }
+    .card-title i{color:var(--primary);}
+
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+    @media(max-width:640px){.form-row-2{grid-template-columns:1fr;}}
+
+    /* Search results */
+    .search-results{
+      max-height:240px;overflow-y:auto;
+      border:1px solid var(--border);border-radius:10px;
+      background:var(--surface);margin-top:6px;display:none;
+    }
+    .search-results.show{display:block;}
+    .search-result{
+      padding:11px 14px;cursor:pointer;
+      border-bottom:1px solid var(--border);
+      font-size:13px;
+    }
+    .search-result:last-child{border-bottom:none;}
+    .search-result:hover{background:var(--primary-soft);}
+    .search-result strong{color:var(--text);font-weight:700;display:block;}
+    .search-result small{color:var(--text-soft);font-size:11px;}
+
+    /* Selected card */
+    .selected-prof{
+      background:var(--primary-soft);
+      border:1px solid #c7d2fe;border-radius:12px;
+      padding:14px 18px;margin-bottom:18px;
+      display:grid;gap:6px;
+    }
+    .selected-prof .row{display:flex;justify-content:space-between;font-size:13px;}
+    .selected-prof .row strong{color:var(--primary-dark);font-weight:700;}
+    .selected-prof .empty{color:var(--text-soft);font-size:13px;font-style:italic;}
+
+    /* Items table */
+    .items-head{
+      display:flex;justify-content:space-between;align-items:center;
+      margin:18px 0 12px;
+    }
+    .items-head h3{font-size:14px;font-weight:800;color:var(--text);}
+
+    .item-row{
+      display:grid;
+      grid-template-columns:60px 1fr 130px 130px 38px;
+      gap:10px;align-items:center;
+      padding:10px 0;border-bottom:1px solid var(--border);
+    }
+    .item-row.head{
+      font-size:11px;font-weight:700;letter-spacing:.5px;
+      text-transform:uppercase;color:var(--text-soft);
+      padding:8px 0;border-bottom:1.5px solid var(--border);
+    }
+    .item-row input{
+      padding:9px 11px;border:1.5px solid var(--border);
+      border-radius:9px;font-size:13px;font-family:inherit;
+      background:var(--surface);outline:none;width:100%;
+    }
+    .item-row input:focus{border-color:var(--primary);}
+    .item-row .total-cell{font-weight:700;color:var(--text);font-size:13px;text-align:right;padding:0 6px;}
+    .btn-del{
+      width:32px;height:32px;border-radius:8px;
+      background:var(--danger-bg);color:var(--danger);
+      display:grid;place-items:center;cursor:pointer;
+      transition:all .15s;
+    }
+    .btn-del:hover{background:var(--danger);color:white;}
+
+    .subtotal-line{
+      text-align:right;font-size:14px;font-weight:800;color:var(--text);
+      padding:14px 0 4px;
+    }
+    .subtotal-line span{color:var(--primary);font-size:18px;}
+
+    .empty-items{
+      padding:32px 16px;text-align:center;color:var(--text-soft);
+      font-size:13px;border:1.5px dashed var(--border-strong);
+      border-radius:12px;margin:14px 0;
+    }
+
+    /* Result */
+    .result-box{
+      background:var(--surface-2);border:1px solid var(--border);
+      border-radius:14px;padding:22px;margin-bottom:14px;
+    }
+    .result-info{
+      display:grid;grid-template-columns:1fr 1fr;gap:12px;
+      padding-bottom:18px;margin-bottom:18px;
+      border-bottom:1px solid var(--border);
+    }
+    .result-info > div{font-size:13px;color:var(--text-mid);}
+    .result-info strong{color:var(--text);font-weight:700;}
+    .result-row{
+      display:flex;justify-content:space-between;
+      padding:10px 0;font-size:14px;
+    }
+    .result-row.total{
+      border-top:2px solid var(--primary);
+      margin-top:10px;padding-top:14px;
+      font-size:18px;font-weight:800;color:var(--primary);
+    }
+
+    .step-actions{
+      display:flex;justify-content:space-between;gap:12px;
+      margin-top:24px;padding-top:20px;
+      border-top:1px solid var(--border);
+      flex-wrap:wrap;
+    }
+    .step-actions .right{display:flex;gap:10px;flex-wrap:wrap;}
+
+    /* History panel */
+    .history-list{display:flex;flex-direction:column;gap:10px;}
+    .history-item{
+      background:var(--surface-2);border:1px solid var(--border);
+      border-radius:12px;padding:14px 16px;
+      display:flex;align-items:center;gap:14px;
+    }
+    .history-item .h-name{flex:1;min-width:0;}
+    .history-item .h-name strong{display:block;font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .history-item .h-name small{font-size:11px;color:var(--text-soft);}
+    .history-item .h-val{font-size:15px;font-weight:800;color:var(--success);}
+
+    .pagto-flag{
+      display:inline-flex;align-items:center;gap:6px;margin-left:8px;
+      font-size:11px;font-weight:600;color:var(--text-mid);
+      background:var(--bg);padding:3px 8px;border-radius:6px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div class="brand-text">
+        <strong>Amor Saúde Pirituba</strong>
+        <small>Fechamento médico</small>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <span id="userName">…</span>
+      </div>
+      <button class="icon-btn" id="logoutBtn" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <a href="portal.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao portal</a>
+
+    <div class="page-head">
+      <div class="page-eyebrow">Financeiro</div>
+      <h1 class="page-title">Fechamento Médico</h1>
+      <p class="page-sub">Gere repasses para profissionais com cálculo automático de impostos PJ e emissão de recibo.</p>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step active" id="step1">
+        <div class="step-num">1</div>
+        <div><div class="step-name">Profissional</div><div class="step-sub">Selecione quem será pago</div></div>
+      </div>
+      <div class="step" id="step2">
+        <div class="step-num">2</div>
+        <div><div class="step-name">Cálculo</div><div class="step-sub">Itens e valores</div></div>
+      </div>
+      <div class="step" id="step3">
+        <div class="step-num">3</div>
+        <div><div class="step-name">Recibo</div><div class="step-sub">Resultado e impressão</div></div>
+      </div>
+    </div>
+
+    <!-- ===== Screen 1: Professional ===== -->
+    <section class="card screen active" id="screen1">
+      <div class="card-pad">
+        <div class="card-title"><i class="fa-solid fa-user-doctor"></i> Selecionar Profissional</div>
+
+        <div class="field" style="margin-bottom:14px;">
+          <label>Buscar profissional</label>
+          <input type="text" id="searchProf" placeholder="Digite o nome para buscar...">
+          <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <div class="selected-prof" id="selectedProfBox">
+          <div class="empty">Nenhum profissional selecionado</div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="field">
+            <label>Tipo / Regime *</label>
+            <select id="profRegime">
+              <option value="">Selecione...</option>
+              <option value="funcionario">Sem Descontos</option>
+              <option value="pj-presumido">PJ — Lucro Presumido</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Categoria</label>
+            <select id="profCategoria">
+              <option value="repasse">Repasses</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <a href="portal.html" class="btn btn-ghost"><i class="fa-solid fa-xmark"></i> Cancelar</a>
+          <div class="right">
+            <button class="btn btn-primary" id="btnGoToCalc">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Screen 2: Calculation ===== -->
+    <section class="card screen" id="screen2">
+      <div class="card-pad">
+        <div class="card-title"><i class="fa-solid fa-calculator"></i> Cálculo</div>
+
+        <div class="selected-prof" id="calcProfBox">
+          <div class="empty">—</div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="field">
+            <label>Forma de pagamento</label>
+            <select id="formaPagamento">
+              <option value="pix">PIX</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="transferencia">Transferência</option>
+            </select>
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-mid);text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer;">
+              <input type="checkbox" id="pagoHoje" style="width:18px;height:18px;accent-color:var(--primary);">
+              Marcar como pago hoje
+            </label>
+          </div>
+        </div>
+
+        <div class="items-head">
+          <h3><i class="fa-solid fa-list"></i> Itens do repasse</h3>
+          <button class="btn btn-primary btn-sm" id="btnAddItem"><i class="fa-solid fa-plus"></i> Adicionar item</button>
+        </div>
+
+        <div class="item-row head">
+          <div>Qtd</div><div>Descrição</div><div style="text-align:right;">Unitário (R$)</div><div style="text-align:right;">Total</div><div></div>
+        </div>
+        <div id="itemsContainer"></div>
+        <div class="empty-items" id="emptyItems" style="display:none;">Nenhum item adicionado ainda. Clique em "Adicionar item".</div>
+
+        <div class="subtotal-line">Subtotal: <span id="subtotalDisplay">R$ 0,00</span></div>
+
+        <div class="step-actions">
+          <button class="btn btn-ghost" id="btnBack1"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+          <div class="right">
+            <button class="btn btn-ghost" id="btnClear"><i class="fa-solid fa-broom"></i> Limpar</button>
+            <button class="btn btn-primary" id="btnCalc"><i class="fa-solid fa-calculator"></i> Calcular</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Screen 3: Result ===== -->
+    <section class="card screen" id="screen3">
+      <div class="card-pad">
+        <div class="card-title"><i class="fa-solid fa-file-invoice-dollar"></i> Resultado do cálculo</div>
+
+        <div class="result-box" id="resultBox">
+          <div class="result-info">
+            <div><strong>Profissional:</strong><br><span id="rNome">—</span></div>
+            <div><strong>CPF/CNPJ:</strong><br><span id="rDoc">—</span></div>
+            <div><strong>Regime:</strong><br><span id="rTipo">—</span></div>
+            <div><strong>Pagamento:</strong><br><span id="rPagto">—</span></div>
+          </div>
+
+          <div class="result-row"><span>Subtotal bruto</span><span id="rSubtotal">R$ 0,00</span></div>
+          <div id="taxRows" style="display:none;">
+            <div class="result-row" style="color:var(--text-mid);"><span>PIS (0,65%)</span><span id="rPis">R$ 0,00</span></div>
+            <div class="result-row" style="color:var(--text-mid);"><span>CSLL (1,00%)</span><span id="rCsll">R$ 0,00</span></div>
+            <div class="result-row" style="color:var(--text-mid);"><span>COFINS (3,00%)</span><span id="rCofins">R$ 0,00</span></div>
+            <div class="result-row" style="color:var(--text-mid);display:none;" id="rIrrfRow"><span>IRRF (1,50%)</span><span id="rIrrf">R$ 0,00</span></div>
+            <div class="result-row" style="color:var(--danger);"><span>Total de descontos</span><span id="rDescontos">R$ 0,00</span></div>
+          </div>
+          <div class="result-row total"><span>VALOR LÍQUIDO</span><span id="rLiquido">R$ 0,00</span></div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-ghost" id="btnBack2"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+          <div class="right">
+            <button class="btn btn-success" id="btnRecibo"><i class="fa-solid fa-receipt"></i> Gerar Recibo</button>
+            <button class="btn btn-primary" id="btnSave"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar fechamento</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== History ===== -->
+    <section class="card" style="margin-top:20px;">
+      <div class="card-pad">
+        <div class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Últimos fechamentos</div>
+        <div id="historyList" class="history-list"></div>
+        <div class="empty" id="historyEmpty" style="display:none;">
+          <i class="fa-solid fa-inbox"></i>
+          <p>Nenhum fechamento salvo ainda.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { db } from './js/firebase-config.js';
+    import { requireAuth, logout, initialsFor } from './js/auth-guard.js';
+    import {
+      collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    let currentUser = null;
+
+    requireAuth(user => {
+      currentUser = user;
+      document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
+      document.getElementById('userAvatar').textContent = initialsFor(user);
+      listenHistory();
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // ===== Base de profissionais (importada do sistema antigo) =====
+    const baseProfissionais = [
+      {nome:'Francisco Sánchez Montaño',documento:'238.526.928-73'},
+      {nome:'Sérgio Alejandro de La Zerda Gutierrez',documento:'231.537.798-64'},
+      {nome:'Felipe Rocha Codarin',documento:'369.885.038-97'},
+      {nome:'Gustavo Gasparetto Bittar',documento:'093.451.076-81'},
+      {nome:'Tacianne Gusman Cavichini',documento:'042.022.557-98'},
+      {nome:'Vera Lucia Ribeiro Cinalli',documento:'102.945.688-75'},
+      {nome:'Roberta Valadão Negri',documento:'073.675.786-42'},
+      {nome:'Breno Gomes Cavalcanti',documento:'049.645.094-86'},
+      {nome:'André de Freitas',documento:'178.327.678-98'},
+      {nome:'Marcos Antonio Machado',documento:'323.378.938-63'},
+      {nome:'Antonio Carlos Medeiros Filho',documento:'088.867.763-49'},
+      {nome:'Holter Dr Sèrgio',documento:'237.892.608-19'},
+      {nome:'Andre Piacentini Medeiros De Souza Brito',documento:'347.547.988-56'},
+      {nome:'Ronaldo Borkowski',documento:'220.164.778-06'},
+      {nome:'Maria Aparecida Ferreira da Silva Gonzaga',documento:'118.194.748-01'},
+      {nome:'Danilo Costa e Carvalho Pinto',documento:'370.670.248-70'},
+      {nome:'Vanessa Yumi Sakamoto',documento:'783.536.102-72'},
+      {nome:'Priscila Rosa Da Silva',documento:'386.543.278-63'},
+      {nome:'Aline Santos de Almeida',documento:'037.485.593-56'},
+      {nome:'Teste Ergometrico',documento:'074.619.301-76'},
+      {nome:'Wilson Takeo Sakamoto',documento:'657.667.762-68'},
+      {nome:'Teófilo Martín Rondon Aguirre',documento:'216.854.548-01'},
+      {nome:'Yuledis Legra Legra',documento:'706.092.792-11'},
+      {nome:'Ruben Horacio Igarzabal',documento:'228.827.728-90'},
+      {nome:'Silvia Regina Motta Da Prato',documento:'032.360.508-70'},
+      {nome:'Carlos Alexandre De Souza Rocha',documento:'676.194.522-49'},
+      {nome:'Fabiano Hiromichi Makimoto',documento:'526.432.042-04'},
+      {nome:'Fabio Guimaraes Hourneaux de Moura',documento:'880.908.258-34'},
+      {nome:'Álvaro Humberto Garcia Sanchez',documento:'703.120.682-04'},
+      {nome:'Griselda Natalia Rojas Gutierrez',documento:'238.528.048-50'},
+      {nome:'Vinicius De Alencar Da Rocha',documento:'357.202.358-09'},
+      {nome:'Luis Fernando Massoni Garcia',documento:'360.470.048-57'},
+      {nome:'Glauco Chiaradia Ferreira',documento:'139.117.848-30'},
+      {nome:'Lucimar Miguel Da Silva',documento:'029.509.984-45'},
+      {nome:'Ansára Alcantara Durante',documento:'407.404.998-82'},
+      {nome:'Cinthya Dos Santos Pestana Brito',documento:'333.202.758-10'},
+      {nome:'Leticia Sucell Mantilla Osorio',documento:'067.905.911-33'},
+      {nome:'Grasiela Passuello',documento:'348.486.468-04'},
+      {nome:'Juan Ignacio Espinoza Morales',documento:'214.473.468-23'},
+      {nome:'Luiz Fernando Silveira Fahed',documento:'230.410.641-20'},
+      {nome:'Diovani Costa Madeira',documento:'099.440.316-07'},
+      {nome:'Felipe Zatyrko Morgensztern',documento:'344.465.238-05'},
+      {nome:'Thales Teixeira De Noroes',documento:'019.872.933-20'},
+      {nome:'Dr. Sergio Mapa',documento:'343.462.918-13'},
+      {nome:'Linda Luciana Oliveira Santana',documento:'779.556.682-00'},
+      {nome:'André Yuzo Eguchi',documento:'166.934.618-83'},
+      {nome:'Breno Bauab',documento:'418.595.848-02'},
+      {nome:'Lais Aparecida Saderio Galaverna',documento:'393.510.088-43'},
+      {nome:'Camila Mayumi Hammoud Mukai',documento:'418.926.998-00'},
+      {nome:'Caroline Barreto Nascimento de Jesus',documento:'421.825.258-07'},
+      {nome:'Juliano Cezar Silva Mota',documento:'332.228.678-95'},
+      {nome:'Camila Santos Souza',documento:'388.893.278-55'},
+      {nome:'Wania Eliza de Almeida',documento:'085.412.606-66'},
+      {nome:'Laís Poubel de Medeiros Moura',documento:'127.742.736-41'},
+      {nome:'Fernando Castrillon Lara Veiga',documento:'898.885.291-53'},
+      {nome:'Vinicius Rodrigo Da Silva Oliveira',documento:'366.753.948-78'},
+      {nome:'Saily Hinojosa Zayas',documento:'067.547.281-40'},
+      {nome:'Caridad Vega Pupo',documento:'065.537.031-59'},
+      {nome:'Isabela Ferreira dos Santos Barbosa',documento:'460.656.088-66'},
+      {nome:'Ricardo Monteiro de Andrade',documento:'137.068.197-67'},
+      {nome:'Anne Yoshimura Pestana',documento:'446.944.098-16'}
+    ].sort((a,b)=>a.nome.localeCompare(b.nome));
+
+    // ===== Constantes de imposto =====
+    const TAXAS = { PIS:0.0065, CSLL:0.01, COFINS:0.03, IRRF:0.015, LIMITE_IRRF:666.67, MIN_BASE:215.05 };
+
+    // ===== Estado =====
+    let currentStep = 1;
+    let selectedProf = null;
+    let items = [];
+    let calcResult = null;
+
+    // ===== Helpers =====
+    const fmt = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    const fmtNum = v => Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    const parseMoney = v => parseFloat(String(v||'').replace(/\./g,'').replace(',','.')) || 0;
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function toast(msg, kind='success'){
+      const el = document.createElement('div');
+      el.className = 'toast ' + kind;
+      el.innerHTML = `<i class="fa-solid fa-${kind==='success'?'circle-check':'circle-exclamation'}"></i> ${esc(msg)}`;
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),3000);
+    }
+
+    // ===== Steps navigation =====
+    function setStep(n){
+      currentStep = n;
+      [1,2,3].forEach(i => {
+        const el = document.getElementById('step'+i);
+        const sc = document.getElementById('screen'+i);
+        el.classList.remove('active','done');
+        sc.classList.remove('active');
+        if(i < n) el.classList.add('done');
+        if(i === n){ el.classList.add('active'); sc.classList.add('active'); }
+      });
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    // ===== Search =====
+    const searchInput = document.getElementById('searchProf');
+    const searchResults = document.getElementById('searchResults');
+
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(doSearch, 150);
+    });
+    document.addEventListener('click', e => {
+      if(!e.target.closest('#searchProf') && !e.target.closest('#searchResults')){
+        searchResults.classList.remove('show');
+      }
+    });
+
+    function doSearch(){
+      const q = searchInput.value.trim().toLowerCase();
+      if(q.length < 2){ searchResults.classList.remove('show'); return; }
+      const matches = baseProfissionais.filter(p => p.nome.toLowerCase().includes(q)).slice(0,30);
+      if(!matches.length){
+        searchResults.innerHTML = '<div class="search-result" style="color:var(--text-soft);">Nenhum resultado</div>';
+      }else{
+        searchResults.innerHTML = matches.map((p,i) =>
+          `<div class="search-result" data-idx="${i}"><strong>${esc(p.nome)}</strong><small>${esc(p.documento)}</small></div>`
+        ).join('');
+        searchResults.querySelectorAll('.search-result').forEach((el,i) => {
+          el.addEventListener('click', () => selectProf(matches[i]));
+        });
+      }
+      searchResults.classList.add('show');
+    }
+
+    function selectProf(p){
+      selectedProf = { ...p };
+      document.getElementById('selectedProfBox').innerHTML = `
+        <div class="row"><span>Nome</span><strong>${esc(p.nome)}</strong></div>
+        <div class="row"><span>CPF/CNPJ</span><strong>${esc(p.documento)}</strong></div>`;
+      searchResults.classList.remove('show');
+      searchInput.value = p.nome;
+    }
+
+    // ===== Step 1 → Step 2 =====
+    document.getElementById('btnGoToCalc').addEventListener('click', () => {
+      if(!selectedProf){ toast('Selecione um profissional', 'error'); return; }
+      const regime = document.getElementById('profRegime').value;
+      if(!regime){ toast('Selecione o regime/tipo', 'error'); return; }
+      selectedProf.regime = regime;
+      selectedProf.categoria = document.getElementById('profCategoria').value;
+
+      document.getElementById('calcProfBox').innerHTML = `
+        <div class="row"><span>Profissional</span><strong>${esc(selectedProf.nome)}</strong></div>
+        <div class="row"><span>Documento</span><strong>${esc(selectedProf.documento)}</strong></div>
+        <div class="row"><span>Regime</span><strong>${regime==='funcionario'?'Sem Descontos':'PJ — Lucro Presumido'}</strong></div>`;
+
+      if(items.length === 0) addItem();
+      setStep(2);
+    });
+
+    // ===== Items =====
+    function addItem(){
+      items.push({ id: Date.now()+Math.random(), qtd:1, descricao:'', valorUnitario:0 });
+      renderItems();
+    }
+    function removeItem(id){
+      items = items.filter(i => i.id !== id);
+      renderItems();
+    }
+    function renderItems(){
+      const c = document.getElementById('itemsContainer');
+      const empty = document.getElementById('emptyItems');
+      if(items.length === 0){
+        c.innerHTML = '';
+        empty.style.display = 'block';
+        document.getElementById('subtotalDisplay').textContent = 'R$ 0,00';
+        return;
+      }
+      empty.style.display = 'none';
+      let subtotal = 0;
+      c.innerHTML = items.map(i => {
+        const total = i.qtd * i.valorUnitario;
+        subtotal += total;
+        return `<div class="item-row" data-id="${i.id}">
+          <input type="number" min="1" value="${i.qtd}" data-field="qtd">
+          <input type="text" placeholder="Descrição" value="${esc(i.descricao)}" data-field="descricao">
+          <input type="text" placeholder="0,00" value="${i.valorUnitario ? fmtNum(i.valorUnitario) : ''}" data-field="valorUnitario" style="text-align:right;">
+          <div class="total-cell">${fmt(total)}</div>
+          <button class="btn-del" data-action="del" title="Remover"><i class="fa-solid fa-trash"></i></button>
+        </div>`;
+      }).join('');
+      document.getElementById('subtotalDisplay').textContent = fmt(subtotal);
+
+      // Bind inputs
+      c.querySelectorAll('.item-row').forEach(row => {
+        const id = parseFloat(row.dataset.id);
+        row.querySelectorAll('input').forEach(inp => {
+          inp.addEventListener('input', () => {
+            const item = items.find(x => x.id === id);
+            if(!item) return;
+            const f = inp.dataset.field;
+            if(f === 'qtd') item.qtd = parseInt(inp.value,10) || 1;
+            else if(f === 'descricao') item.descricao = inp.value.toUpperCase();
+            else if(f === 'valorUnitario') item.valorUnitario = parseMoney(inp.value);
+            // re-render só do total dessa linha
+            const total = item.qtd * item.valorUnitario;
+            row.querySelector('.total-cell').textContent = fmt(total);
+            // recalcula subtotal sem re-render geral
+            const sub = items.reduce((s,i)=>s+i.qtd*i.valorUnitario,0);
+            document.getElementById('subtotalDisplay').textContent = fmt(sub);
+          });
+          if(inp.dataset.field === 'valorUnitario'){
+            inp.addEventListener('blur', () => {
+              const item = items.find(x => x.id === id);
+              if(item && item.valorUnitario) inp.value = fmtNum(item.valorUnitario);
+            });
+          }
+          if(inp.dataset.field === 'descricao'){
+            inp.addEventListener('blur', () => { inp.value = inp.value.toUpperCase(); });
+          }
+        });
+        row.querySelector('[data-action="del"]').addEventListener('click', () => removeItem(id));
+      });
+    }
+
+    document.getElementById('btnAddItem').addEventListener('click', addItem);
+    document.getElementById('btnClear').addEventListener('click', () => {
+      if(!confirm('Limpar todos os itens?')) return;
+      items = [];
+      addItem();
+    });
+    document.getElementById('btnBack1').addEventListener('click', () => setStep(1));
+    document.getElementById('btnBack2').addEventListener('click', () => setStep(2));
+
+    // ===== Calcular =====
+    document.getElementById('btnCalc').addEventListener('click', () => {
+      if(!selectedProf){ toast('Selecione um profissional', 'error'); return; }
+      const validItems = items.filter(i => i.descricao.trim() && i.valorUnitario > 0 && i.qtd > 0);
+      if(!validItems.length){ toast('Adicione pelo menos um item válido', 'error'); return; }
+
+      const subtotal = validItems.reduce((s,i)=>s+i.qtd*i.valorUnitario,0);
+      let pis=0, csll=0, cofins=0, irrf=0;
+      let withTax = false;
+
+      if(selectedProf.regime === 'pj-presumido' && subtotal > TAXAS.MIN_BASE){
+        withTax = true;
+        pis    = Math.round(subtotal * TAXAS.PIS    * 100)/100;
+        csll   = Math.round(subtotal * TAXAS.CSLL   * 100)/100;
+        cofins = Math.round(subtotal * TAXAS.COFINS * 100)/100;
+        if(subtotal > TAXAS.LIMITE_IRRF){
+          irrf = Math.round(subtotal * TAXAS.IRRF * 100)/100;
+        }
+      }
+      const totDescontos = Math.round((pis+csll+cofins+irrf)*100)/100;
+      const liquido = Math.round((subtotal - totDescontos)*100)/100;
+
+      calcResult = {
+        profissional: selectedProf,
+        formaPagamento: document.getElementById('formaPagamento').value,
+        pagoHoje: document.getElementById('pagoHoje').checked,
+        items: validItems.map(i => ({qtd:i.qtd, descricao:i.descricao, valorUnitario:i.valorUnitario, total:i.qtd*i.valorUnitario})),
+        subtotal, pis, csll, cofins, irrf, totDescontos, liquido,
+        data: new Date().toLocaleString('pt-BR')
+      };
+
+      // Renderiza resultado
+      document.getElementById('rNome').textContent = selectedProf.nome;
+      document.getElementById('rDoc').textContent  = selectedProf.documento;
+      document.getElementById('rTipo').textContent = selectedProf.regime === 'funcionario' ? 'Sem Descontos' : 'PJ — Lucro Presumido';
+      document.getElementById('rPagto').textContent = ({pix:'PIX',dinheiro:'Dinheiro',transferencia:'Transferência'})[calcResult.formaPagamento];
+      document.getElementById('rSubtotal').textContent = fmt(subtotal);
+      document.getElementById('rPis').textContent     = fmt(pis);
+      document.getElementById('rCsll').textContent    = fmt(csll);
+      document.getElementById('rCofins').textContent  = fmt(cofins);
+      document.getElementById('rIrrf').textContent    = fmt(irrf);
+      document.getElementById('rDescontos').textContent = fmt(totDescontos);
+      document.getElementById('rLiquido').textContent = fmt(liquido);
+      document.getElementById('taxRows').style.display = withTax ? 'block' : 'none';
+      document.getElementById('rIrrfRow').style.display = irrf > 0 ? 'flex' : 'none';
+
+      setStep(3);
+    });
+
+    // ===== Recibo (impressão) =====
+    document.getElementById('btnRecibo').addEventListener('click', () => {
+      if(!calcResult){ toast('Calcule primeiro','error'); return; }
+      const w = window.open('', '_blank');
+      if(!w){ toast('Permita pop-ups para imprimir','error'); return; }
+      w.document.write(buildReciboHTML(calcResult));
+      w.document.close();
+    });
+
+    function buildReciboHTML(d){
+      const fmtPag = ({pix:'PIX',dinheiro:'Dinheiro',transferencia:'Transferência'})[d.formaPagamento];
+      const now = new Date();
+      const data = now.toLocaleDateString('pt-BR');
+      const hora = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      const aliq = (d.profissional.regime === 'pj-presumido' && d.subtotal > 0) ? d.totDescontos / d.subtotal : 0;
+      const linhas = d.items.map(i =>
+        `<tr><td class="qtd">${i.qtd}</td><td>${esc(i.descricao)}</td><td class="val">${fmt(i.total)}</td><td class="val liq">${fmt(i.total*(1-aliq))}</td></tr>`
+      ).join('');
+      const totaisRow = `<tr class="totais"><td colspan="2"></td><td class="val">Bruto: ${fmt(d.subtotal)}</td><td class="val liq">TOTAL: ${fmt(d.liquido)}</td></tr>`;
+      const dia = String(now.getDate()).padStart(2,'0'), mes = String(now.getMonth()+1).padStart(2,'0'), ano = now.getFullYear();
+      const dataPag = d.pagoHoje ? `${dia}/${mes}/${ano}` : '_______/_______/_____';
+      const imp = d.profissional.regime === 'pj-presumido' && d.totDescontos > 0
+        ? `Impostos: PIS ${fmt(d.pis)} | CSLL ${fmt(d.csll)} | COFINS ${fmt(d.cofins)}${d.irrf>0?` | IRRF ${fmt(d.irrf)}`:''}` : '';
+      const usr = currentUser.email;
+
+      return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Repasse Consolidado</title>
+<style>
+@page{size:A4;margin:0}
+body{font-family:Arial,sans-serif;margin:0;background:#fff;color:#000}
+.recibo{width:210mm;min-height:297mm;box-sizing:border-box;padding:14mm}
+.cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:8mm}
+.titulo{font-size:24px;font-weight:600;text-align:center;flex:1}
+hr{border:none;border-top:1px solid #000;margin:0 0 8mm 0}
+.topo{display:grid;grid-template-columns:1fr 1fr;gap:6mm;font-size:12px;margin-bottom:6mm}
+.topo .dir{text-align:right}
+.pagoa{margin:6mm 0;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid #000;padding:6px 8px}
+th{text-align:center;background:#f0f0f0}
+.qtd{width:10%;text-align:center}
+.val{width:22%;text-align:right}
+.liq{font-weight:700}
+.totais td{font-weight:700;background:#f9f9f9}
+.imp{margin-top:4mm;font-size:11px;color:#444}
+.valid{margin:8mm 0 6mm;text-align:center;font-size:11px;line-height:1.5}
+.assin{display:flex;justify-content:space-around;margin:14mm 0 6mm;gap:30mm}
+.assin div{text-align:center;flex:1}
+.assin .lin{border-top:1px solid #000;margin-bottom:4px}
+.info{margin-top:6mm;font-size:12px;line-height:1.6;border-top:1px solid #000;padding-top:6mm}
+.info .ti{font-weight:700;text-transform:uppercase;margin-bottom:3mm}
+</style></head>
+<body><div class="recibo">
+  <div class="cab"><div style="width:80px"><span style="font-size:13px;font-weight:700">Amor Saúde</span></div>
+    <div class="titulo">Repasse Consolidado</div><div style="width:80px"></div></div>
+  <hr>
+  <div class="topo">
+    <div><strong>Amor Saúde SP Pirituba</strong><br>Avenida Doutor Felipe Pinel — Pirituba / São Paulo/SP<br>Data/Hora: ${data} ${hora} — Pagamento: ${fmtPag}</div>
+    <div class="dir">Usuário: ${esc(usr)}</div>
+  </div>
+  <div class="pagoa"><strong>Pago a: ${esc(d.profissional.nome)}</strong> &nbsp;/&nbsp; CPF/CNPJ: <strong>${esc(d.profissional.documento)}</strong></div>
+  <table><thead><tr><th>Qtd</th><th>Item</th><th>Valor Bruto</th><th>Valor Líquido</th></tr></thead>
+    <tbody>${linhas}${totaisRow}</tbody></table>
+  ${imp ? `<div class="imp">${esc(imp)}</div>` : ''}
+  <div class="valid">Declaro que conferi e validei os serviços prestados, estando de acordo com os valores apurados, ciente de que o pagamento desta agenda será realizado conforme calendário financeiro da clínica.</div>
+  <div class="assin">
+    ${d.formaPagamento==='dinheiro'?'<div><div class="lin"></div><div>Assinatura do Responsável</div></div>':''}
+    <div><div class="lin"></div><div>Carimbo e Assinatura</div></div>
+  </div>
+  <div class="info">
+    <div class="ti">Informações de Pagamento</div>
+    <p>Forma: (${d.formaPagamento==='transferencia'?'X':' '}) Transferência &nbsp; (${d.formaPagamento==='dinheiro'?'X':' '}) Dinheiro &nbsp; (${d.formaPagamento==='pix'?'X':' '}) PIX &nbsp;&nbsp; Data: ${dataPag}</p>
+    <p>${d.pagoHoje?'☑':'☐'} Quitado conforme comprovante bancário em anexo</p>
+  </div>
+</div>
+<script>window.onload=function(){setTimeout(function(){window.print()},250)}<\/script>
+</body></html>`;
+    }
+
+    // ===== Salvar fechamento no Firestore =====
+    document.getElementById('btnSave').addEventListener('click', async () => {
+      if(!calcResult){ toast('Calcule primeiro','error'); return; }
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Salvando...';
+      try{
+        await addDoc(collection(db, 'fechamentos'), {
+          profNome:    calcResult.profissional.nome,
+          profDoc:     calcResult.profissional.documento,
+          profRegime:  calcResult.profissional.regime,
+          formaPagamento: calcResult.formaPagamento,
+          pagoHoje:    calcResult.pagoHoje,
+          items:       calcResult.items,
+          subtotal:    calcResult.subtotal,
+          pis: calcResult.pis, csll: calcResult.csll, cofins: calcResult.cofins, irrf: calcResult.irrf,
+          totDescontos: calcResult.totDescontos,
+          liquido:     calcResult.liquido,
+          createdAt:   serverTimestamp(),
+          createdBy:   currentUser.email,
+          createdByUid:currentUser.uid
+        });
+        toast('Fechamento salvo com sucesso','success');
+        // reset suave
+        items = [];
+        calcResult = null;
+        selectedProf = null;
+        document.getElementById('searchProf').value = '';
+        document.getElementById('selectedProfBox').innerHTML = '<div class="empty">Nenhum profissional selecionado</div>';
+        document.getElementById('profRegime').value = '';
+        document.getElementById('pagoHoje').checked = false;
+        setStep(1);
+      }catch(err){
+        console.error(err);
+        toast('Erro ao salvar: '+err.message, 'error');
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Salvar fechamento';
+      }
+    });
+
+    // ===== Histórico em tempo real =====
+    function listenHistory(){
+      const q = query(collection(db,'fechamentos'), orderBy('createdAt','desc'), limit(20));
+      onSnapshot(q, snap => {
+        const list = document.getElementById('historyList');
+        const empty = document.getElementById('historyEmpty');
+        if(snap.empty){ list.innerHTML=''; empty.style.display='block'; return; }
+        empty.style.display = 'none';
+        list.innerHTML = snap.docs.map(d => {
+          const x = d.data();
+          const when = x.createdAt?.toDate ? x.createdAt.toDate().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+          return `<div class="history-item">
+            <div class="h-name">
+              <strong>${esc(x.profNome)}</strong>
+              <small>${when} · ${esc(x.createdBy||'—')} · ${({pix:'PIX',dinheiro:'Dinheiro',transferencia:'Transferência'})[x.formaPagamento]||'—'}${x.pagoHoje?'<span class="pagto-flag"><i class="fa-solid fa-check"></i> pago</span>':''}</small>
+            </div>
+            <div class="h-val">${fmt(x.liquido)}</div>
+          </div>`;
+        }).join('');
+      }, err => console.error('history listener:',err));
+    }
+  </script>
+</body>
+</html>

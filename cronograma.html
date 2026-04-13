@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma — Amor Saúde Pirituba</title>
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .back-link{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-mid);font-weight:600;margin-bottom:14px;transition:color .15s;}
+    .back-link:hover{color:var(--primary);}
+
+    /* Tabs */
+    .tabs{
+      display:flex;gap:5px;background:var(--surface);
+      border:1px solid var(--border);border-radius:14px;padding:5px;
+      margin-bottom:22px;box-shadow:var(--shadow-sm);
+      flex-wrap:wrap;
+    }
+    .tab{
+      flex:1;min-width:120px;padding:11px 16px;
+      font-size:13px;font-weight:700;color:var(--text-soft);
+      border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;
+      transition:all .18s;
+    }
+    .tab:hover{color:var(--text);}
+    .tab.active{background:var(--primary);color:white;box-shadow:0 4px 12px rgba(79,70,229,.25);}
+
+    .pane{display:none;}
+    .pane.active{display:block;}
+
+    /* Stats */
+    .stats{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:14px;margin-bottom:22px;
+    }
+    .stat{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:14px;padding:18px 20px;
+      display:flex;align-items:center;gap:14px;
+      box-shadow:var(--shadow-sm);
+    }
+    .stat-icon{
+      width:46px;height:46px;border-radius:13px;
+      display:grid;place-items:center;font-size:19px;
+      flex-shrink:0;
+    }
+    .stat .num{font-size:24px;font-weight:900;color:var(--text);letter-spacing:-1px;line-height:1;}
+    .stat .lbl{font-size:11px;color:var(--text-soft);font-weight:600;margin-top:3px;}
+
+    /* Card title */
+    .card-title{
+      font-size:15px;font-weight:800;
+      display:flex;align-items:center;gap:10px;
+      margin-bottom:18px;padding-bottom:14px;
+      border-bottom:1px solid var(--border);
+    }
+    .card-title i{color:var(--primary);}
+    .card-title-flex{justify-content:space-between;}
+
+    /* Day nav */
+    .day-nav{display:flex;align-items:center;gap:10px;}
+    .day-btn{
+      width:34px;height:34px;border-radius:10px;
+      background:var(--bg);border:1px solid var(--border);
+      display:grid;place-items:center;color:var(--text-mid);
+      cursor:pointer;transition:all .15s;
+    }
+    .day-btn:hover{border-color:var(--primary);color:var(--primary);}
+    .day-name{
+      font-size:14px;font-weight:800;color:var(--text);
+      min-width:130px;text-align:center;
+    }
+
+    /* Schedule grid */
+    .schedule-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+      gap:14px;
+    }
+    .room-card{
+      background:var(--surface-2);
+      border:1.5px solid var(--border);
+      border-radius:14px;padding:16px 18px;
+      transition:all .2s;position:relative;overflow:hidden;
+    }
+    .room-card::before{
+      content:'';position:absolute;top:0;left:0;bottom:0;width:4px;
+      background:var(--primary);
+    }
+    .room-card.ok::before{background:var(--success);}
+    .room-card.ok{background:#f0fdf4;border-color:#bbf7d0;}
+
+    .room-num{
+      font-size:11px;font-weight:800;letter-spacing:.6px;
+      text-transform:uppercase;color:var(--primary);
+      margin-bottom:6px;
+    }
+    .room-card.ok .room-num{color:var(--success);}
+    .room-doc{font-size:15px;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:3px;}
+    .room-role{font-size:12px;color:var(--text-mid);margin-bottom:12px;}
+    .room-btn{
+      width:100%;padding:8px 12px;border-radius:9px;
+      font-size:12px;font-weight:700;cursor:pointer;
+      background:var(--primary);color:white;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      transition:all .15s;border:none;
+    }
+    .room-btn:hover{background:var(--primary-dark);}
+    .room-btn.done{background:var(--success);}
+    .room-btn.done:hover{background:#047857;}
+
+    /* Weekly grid */
+    .week-grid{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:12px;
+    }
+    @media(max-width:900px){.week-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:520px){.week-grid{grid-template-columns:1fr;}}
+
+    .week-col{
+      background:var(--surface-2);border:1px solid var(--border);
+      border-radius:12px;padding:12px;
+    }
+    .week-col.today{
+      background:var(--primary-soft);border-color:#c7d2fe;
+    }
+    .week-day{
+      font-size:11px;font-weight:800;letter-spacing:.6px;
+      text-transform:uppercase;color:var(--text-soft);
+      text-align:center;padding-bottom:8px;margin-bottom:8px;
+      border-bottom:1px solid var(--border);
+    }
+    .week-col.today .week-day{color:var(--primary);}
+    .week-item{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:8px;padding:8px 10px;margin-bottom:6px;
+    }
+    .wi-sala{font-size:10px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;}
+    .wi-doc{font-size:12px;font-weight:700;color:var(--text);margin:2px 0;}
+    .wi-role{font-size:10px;color:var(--text-soft);}
+    .week-empty{font-size:11px;color:var(--text-soft);text-align:center;padding:6px;font-style:italic;}
+
+    /* Week editor */
+    .day-tabs{display:flex;gap:5px;margin-bottom:16px;flex-wrap:wrap;}
+    .day-tab{
+      padding:8px 16px;font-size:12px;font-weight:700;
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:8px;color:var(--text-mid);cursor:pointer;
+      transition:all .15s;
+    }
+    .day-tab:hover{border-color:var(--primary);color:var(--primary);}
+    .day-tab.active{background:var(--primary);color:white;border-color:var(--primary);}
+
+    .editor-row{
+      display:flex;align-items:center;gap:10px;
+      background:var(--surface-2);border:1px solid var(--border);
+      border-radius:10px;padding:10px 12px;margin-bottom:8px;
+    }
+    .editor-row .er-sala{
+      width:50px;text-align:center;flex-shrink:0;
+      font-size:10px;font-weight:800;color:var(--primary);text-transform:uppercase;
+    }
+    .editor-row .er-sala b{font-size:14px;display:block;color:var(--text);}
+    .editor-row .er-fields{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0;}
+    .editor-row input{
+      padding:6px 10px;border:1px solid var(--border);border-radius:7px;
+      font-size:12px;font-family:inherit;background:var(--surface);outline:none;
+    }
+    .editor-row input:focus{border-color:var(--primary);}
+    .editor-row .er-btns{display:flex;flex-direction:column;gap:3px;flex-shrink:0;}
+    .ic-mini{
+      width:26px;height:26px;border-radius:6px;
+      background:var(--bg);border:1px solid var(--border);
+      display:grid;place-items:center;cursor:pointer;font-size:10px;color:var(--text-mid);
+    }
+    .ic-mini:hover{border-color:var(--primary);color:var(--primary);}
+    .ic-del{background:var(--danger-bg);border-color:#fecaca;color:var(--danger);width:30px;height:30px;}
+    .ic-del:hover{background:var(--danger);color:white;border-color:var(--danger);}
+
+    .add-row{
+      display:grid;grid-template-columns:80px 1fr 1fr auto;gap:8px;align-items:end;
+      margin-top:14px;padding-top:14px;border-top:1px dashed var(--border-strong);
+    }
+    @media(max-width:640px){.add-row{grid-template-columns:1fr;}}
+    .add-row .field label{font-size:10px;}
+    .add-row .field input{padding:9px 11px;font-size:13px;}
+
+    /* Checklist */
+    .cli-list{display:flex;flex-direction:column;gap:10px;}
+    .cli-item{
+      background:var(--surface-2);border:1.5px solid var(--border);
+      border-radius:12px;padding:14px 18px;
+      display:flex;align-items:center;gap:14px;cursor:pointer;
+      transition:all .2s;
+    }
+    .cli-item:hover{border-color:var(--primary);}
+    .cli-item.done{background:#f0fdf4;border-color:#bbf7d0;}
+    .cli-icon{
+      width:42px;height:42px;border-radius:11px;
+      background:var(--surface);display:grid;place-items:center;
+      font-size:20px;flex-shrink:0;
+    }
+    .cli-body{flex:1;min-width:0;}
+    .cli-lbl{font-size:14px;font-weight:700;color:var(--text);}
+    .cli-sub{font-size:12px;color:var(--text-soft);margin-top:2px;}
+    .cli-check{
+      width:26px;height:26px;border-radius:50%;
+      border:2px solid var(--border-strong);
+      display:grid;place-items:center;
+      transition:all .15s;
+    }
+    .cli-item.done .cli-check{
+      background:var(--success);border-color:var(--success);
+      color:white;
+    }
+    .cli-item.done .cli-check::after{
+      content:'✓';font-weight:900;
+    }
+
+    .saved-tag{
+      display:none;align-items:center;gap:6px;
+      background:var(--success-bg);color:var(--success);
+      border:1px solid #a7f3d0;border-radius:999px;
+      padding:4px 12px;font-size:11px;font-weight:700;
+      margin-left:10px;
+    }
+    .saved-tag.show{display:inline-flex;}
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div class="brand-text">
+        <strong>Amor Saúde Pirituba</strong>
+        <small>Cronograma operacional</small>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <span id="userName">…</span>
+      </div>
+      <button class="icon-btn" id="logoutBtn" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <a href="portal.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao portal</a>
+
+    <div class="page-head">
+      <div class="page-eyebrow">Operações</div>
+      <h1 class="page-title">Cronograma <span id="dateBadge" style="font-size:14px;font-weight:600;color:var(--text-soft);text-transform:capitalize;margin-left:10px;">—</span></h1>
+      <p class="page-sub">Visualize a agenda do dia, edite o cronograma semanal e acompanhe o checklist de abertura. Sincronizado em tempo real entre todos os usuários.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-icon" style="background:var(--primary-soft);color:var(--primary);"><i class="fa-solid fa-door-open"></i></div>
+        <div><div class="num" id="stRooms">0</div><div class="lbl">Salas hoje</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-icon" style="background:var(--success-bg);color:var(--success);"><i class="fa-solid fa-check"></i></div>
+        <div><div class="num" id="stReady">0</div><div class="lbl">Configuradas</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-icon" style="background:var(--warning-bg);color:var(--warning);"><i class="fa-solid fa-list-check"></i></div>
+        <div><div class="num" id="stCli">0/0</div><div class="lbl">Checklist abertura</div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-pane="agenda"><i class="fa-solid fa-calendar-day"></i> Agenda do dia</button>
+      <button class="tab" data-pane="semana"><i class="fa-solid fa-calendar-week"></i> Semana</button>
+      <button class="tab" data-pane="abertura"><i class="fa-solid fa-door-open"></i> Abertura</button>
+    </div>
+
+    <!-- ===== Pane Agenda ===== -->
+    <div class="pane active" id="paneAgenda">
+      <section class="card">
+        <div class="card-pad">
+          <div class="card-title card-title-flex">
+            <span><i class="fa-solid fa-stethoscope"></i> Médicos do dia</span>
+            <div class="day-nav">
+              <button class="day-btn" id="prevDay"><i class="fa-solid fa-chevron-left"></i></button>
+              <div class="day-name" id="curDayName">—</div>
+              <button class="day-btn" id="nextDay"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="schedule-grid" id="scheduleGrid"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== Pane Semana ===== -->
+    <div class="pane" id="paneSemana">
+      <section class="card">
+        <div class="card-pad">
+          <div class="card-title card-title-flex">
+            <span>
+              <i class="fa-solid fa-calendar-week"></i> Cronograma semanal
+              <span class="saved-tag" id="savedTag"><i class="fa-solid fa-check"></i> Salvo</span>
+            </span>
+            <button class="btn btn-primary btn-sm" id="btnEditWeek"><i class="fa-solid fa-pen"></i> Editar</button>
+          </div>
+
+          <div id="weekView">
+            <div class="week-grid" id="weekGrid"></div>
+          </div>
+
+          <div id="weekEditor" style="display:none;">
+            <div class="day-tabs" id="dayTabs"></div>
+            <div id="editorRows"></div>
+
+            <div class="add-row">
+              <div class="field"><label>Sala</label><input id="addSala" type="text" placeholder="03"></div>
+              <div class="field"><label>Médico</label><input id="addDoc" type="text" placeholder="Dr. Nome"></div>
+              <div class="field"><label>Especialidade</label><input id="addRole" type="text" placeholder="Cardiologia"></div>
+              <button class="btn btn-primary" id="btnAddRow"><i class="fa-solid fa-plus"></i> Adicionar</button>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
+              <button class="btn btn-success" id="btnSaveWeek" style="flex:1;justify-content:center;"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar cronograma</button>
+              <button class="btn btn-ghost" id="btnCloseEdit"><i class="fa-solid fa-xmark"></i> Fechar editor</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== Pane Abertura ===== -->
+    <div class="pane" id="paneAbertura">
+      <section class="card">
+        <div class="card-pad">
+          <div class="card-title card-title-flex">
+            <span><i class="fa-solid fa-door-open"></i> Checklist de abertura</span>
+            <button class="btn btn-ghost btn-sm" id="btnResetCli"><i class="fa-solid fa-rotate"></i> Resetar dia</button>
+          </div>
+          <div class="cli-list" id="cliList"></div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { db } from './js/firebase-config.js';
+    import { requireAuth, logout, initialsFor } from './js/auth-guard.js';
+    import {
+      doc, setDoc, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    let currentUser = null;
+
+    requireAuth(user => {
+      currentUser = user;
+      document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
+      document.getElementById('userAvatar').textContent = initialsFor(user);
+      init();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // ===== Constantes =====
+    const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const DIAS_UTEIS = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+    // Checklist padrão (vindo do sistema antigo)
+    const CLI_BASE = [
+      {id:'impressao', icon:'🖨️', lbl:'Impressão das agendas',  sub:'Imprimir agenda do dia para os consultórios'},
+      {id:'ac_recep',  icon:'❄️', lbl:'Ar-cond. recepção',       sub:'Verificar temperatura e funcionamento'},
+      {id:'ac_pos',    icon:'❄️', lbl:'Ar-cond. posto',          sub:'Verificar ar-condicionado do posto'},
+      {id:'chave',     icon:'🔑', lbl:'Chave da clínica',        sub:'Confirmar posse da chave mestra'},
+      {id:'comp',      icon:'💻', lbl:'Computadores ligados',    sub:'Ligar todos os computadores dos consultórios'},
+      {id:'recep',     icon:'🏥', lbl:'Recepção organizada',     sub:'Mesa, fichas e materiais em ordem'}
+    ];
+
+    // ===== Estado =====
+    let AGENDA = { Segunda:[], Terça:[], Quarta:[], Quinta:[], Sexta:[], Sábado:[] };
+    let setupDone = {};   // {sala: true/false} — apenas hoje
+    let cliStatus = {};   // {id: true/false} — apenas hoje
+    let dayOffset = 0;    // 0 = hoje
+    let editorDay = 'Segunda';
+
+    // ===== Helpers =====
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function todayKey(){
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function toast(msg, kind='success'){
+      const el = document.createElement('div');
+      el.className = 'toast ' + kind;
+      el.innerHTML = `<i class="fa-solid fa-${kind==='success'?'circle-check':'circle-exclamation'}"></i> ${esc(msg)}`;
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),3000);
+    }
+
+    // ===== Tabs =====
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('pane' + t.dataset.pane.charAt(0).toUpperCase() + t.dataset.pane.slice(1)).classList.add('active');
+      });
+    });
+
+    // ===== Init =====
+    function init(){
+      const now = new Date();
+      document.getElementById('dateBadge').textContent = DIAS[now.getDay()] + ', ' + now.getDate() + ' de ' + MESES[now.getMonth()];
+
+      // Listeners Firestore
+      // 1. Cronograma semanal — doc único compartilhado
+      onSnapshot(doc(db,'cronograma','agenda'), snap => {
+        if(snap.exists()){
+          const data = snap.data();
+          DIAS_UTEIS.forEach(d => { AGENDA[d] = data[d] || []; });
+        }
+        renderAgenda();
+        renderWeek();
+        if(document.getElementById('weekEditor').style.display !== 'none') renderEditor();
+      }, err => console.error('agenda listener:',err));
+
+      // 2. Setup das salas — doc do dia
+      onSnapshot(doc(db,'cronograma_setup',todayKey()), snap => {
+        setupDone = snap.exists() ? (snap.data().rooms || {}) : {};
+        renderAgenda();
+      }, err => console.error('setup listener:',err));
+
+      // 3. Checklist — doc do dia
+      onSnapshot(doc(db,'cronograma_checklist',todayKey()), snap => {
+        cliStatus = snap.exists() ? (snap.data().items || {}) : {};
+        renderChecklist();
+      }, err => console.error('checklist listener:',err));
+    }
+
+    // ===== Agenda do dia =====
+    document.getElementById('prevDay').addEventListener('click', () => { dayOffset--; renderAgenda(); });
+    document.getElementById('nextDay').addEventListener('click', () => { dayOffset++; renderAgenda(); });
+
+    function renderAgenda(){
+      const d = new Date(); d.setDate(d.getDate() + dayOffset);
+      const nome = DIAS[d.getDay()];
+      const isToday = dayOffset === 0;
+      document.getElementById('curDayName').textContent = (isToday ? 'Hoje · ' : '') + nome;
+
+      const lista = AGENDA[nome] || [];
+      document.getElementById('stRooms').textContent = lista.length;
+      const ready = lista.filter(i => setupDone[i.sala]).length;
+      document.getElementById('stReady').textContent = ready;
+
+      const grid = document.getElementById('scheduleGrid');
+      if(nome === 'Domingo' || !lista.length){
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 24px;color:var(--text-soft);">
+          <i class="fa-solid fa-moon" style="font-size:32px;display:block;margin-bottom:10px;opacity:.4;"></i>
+          <p>Sem agenda neste dia</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = lista.map(item => {
+        const ok = !!setupDone[item.sala];
+        return `<div class="room-card ${ok?'ok':''}">
+          <div class="room-num">Sala ${esc(item.sala)}</div>
+          <div class="room-doc">${esc(item.doc)}</div>
+          <div class="room-role">${esc(item.role)}</div>
+          ${isToday ? `<button class="room-btn ${ok?'done':''}" data-sala="${esc(item.sala)}">
+            <i class="fa-solid fa-${ok?'check':'wrench'}"></i> ${ok?'Configurada':'Marcar configurada'}
+          </button>` : ''}
+        </div>`;
+      }).join('');
+
+      grid.querySelectorAll('[data-sala]').forEach(btn => {
+        btn.addEventListener('click', () => toggleSetup(btn.dataset.sala));
+      });
+    }
+
+    async function toggleSetup(sala){
+      setupDone[sala] = !setupDone[sala];
+      try{
+        await setDoc(doc(db,'cronograma_setup',todayKey()), {
+          rooms: setupDone,
+          updatedAt: new Date().toISOString(),
+          updatedBy: currentUser.email
+        }, {merge:true});
+      }catch(err){ toast('Erro: '+err.message,'error'); }
+    }
+
+    // ===== Semana view =====
+    function renderWeek(){
+      const hoje = DIAS[new Date().getDay()];
+      const grid = document.getElementById('weekGrid');
+      grid.innerHTML = DIAS_UTEIS.map(d => {
+        const itens = AGENDA[d] || [];
+        return `<div class="week-col ${d===hoje?'today':''}">
+          <div class="week-day">${d}</div>
+          ${itens.length ? itens.map(i => `
+            <div class="week-item">
+              <div class="wi-sala">Sala ${esc(i.sala)}</div>
+              <div class="wi-doc">${esc(i.doc)}</div>
+              <div class="wi-role">${esc(i.role)}</div>
+            </div>`).join('') : '<div class="week-empty">—</div>'}
+        </div>`;
+      }).join('');
+    }
+
+    // ===== Editor semanal =====
+    document.getElementById('btnEditWeek').addEventListener('click', () => {
+      document.getElementById('weekView').style.display = 'none';
+      document.getElementById('weekEditor').style.display = 'block';
+      document.getElementById('btnEditWeek').style.display = 'none';
+      renderEditor();
+    });
+    document.getElementById('btnCloseEdit').addEventListener('click', () => {
+      document.getElementById('weekView').style.display = 'block';
+      document.getElementById('weekEditor').style.display = 'none';
+      document.getElementById('btnEditWeek').style.display = '';
+    });
+
+    function renderEditor(){
+      // Render day tabs
+      const tabs = document.getElementById('dayTabs');
+      tabs.innerHTML = DIAS_UTEIS.map(d =>
+        `<button class="day-tab ${d===editorDay?'active':''}" data-day="${d}">${d.slice(0,3)}</button>`
+      ).join('');
+      tabs.querySelectorAll('[data-day]').forEach(b => {
+        b.addEventListener('click', () => { editorDay = b.dataset.day; renderEditor(); });
+      });
+
+      // Render rows
+      const rows = document.getElementById('editorRows');
+      const itens = AGENDA[editorDay] || [];
+      if(!itens.length){
+        rows.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-soft);font-size:13px;border:1.5px dashed var(--border-strong);border-radius:12px;">
+          Nenhuma sala em ${editorDay}. Adicione abaixo.
+        </div>`;
+        return;
+      }
+      rows.innerHTML = itens.map((it,idx) => `
+        <div class="editor-row">
+          <div class="er-sala">Sala<b>${esc(it.sala)}</b></div>
+          <div class="er-fields">
+            <input type="text" data-idx="${idx}" data-field="doc"  value="${esc(it.doc)}"  placeholder="Médico">
+            <input type="text" data-idx="${idx}" data-field="role" value="${esc(it.role)}" placeholder="Especialidade">
+          </div>
+          <div class="er-btns">
+            <button class="ic-mini" data-action="up"   data-idx="${idx}">↑</button>
+            <button class="ic-mini" data-action="down" data-idx="${idx}">↓</button>
+          </div>
+          <button class="ic-mini ic-del" data-action="del" data-idx="${idx}"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `).join('');
+
+      rows.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const i = parseInt(inp.dataset.idx,10);
+          AGENDA[editorDay][i][inp.dataset.field] = inp.value;
+        });
+      });
+      rows.querySelectorAll('[data-action]').forEach(b => {
+        b.addEventListener('click', () => {
+          const i = parseInt(b.dataset.idx,10);
+          const arr = AGENDA[editorDay];
+          if(b.dataset.action === 'del'){
+            if(!confirm('Remover esta sala?')) return;
+            arr.splice(i,1);
+          }else if(b.dataset.action === 'up' && i > 0){
+            [arr[i],arr[i-1]] = [arr[i-1],arr[i]];
+          }else if(b.dataset.action === 'down' && i < arr.length-1){
+            [arr[i],arr[i+1]] = [arr[i+1],arr[i]];
+          }
+          renderEditor();
+        });
+      });
+    }
+
+    document.getElementById('btnAddRow').addEventListener('click', () => {
+      const sala = document.getElementById('addSala').value.trim().toUpperCase();
+      const doc  = document.getElementById('addDoc').value.trim();
+      const role = document.getElementById('addRole').value.trim();
+      if(!sala || !doc || !role){ toast('Preencha sala, médico e especialidade','error'); return; }
+      if(!AGENDA[editorDay]) AGENDA[editorDay] = [];
+      AGENDA[editorDay].push({sala, doc, role});
+      ['addSala','addDoc','addRole'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('addSala').focus();
+      renderEditor();
+      toast(`Sala ${sala} adicionada em ${editorDay}`,'success');
+    });
+
+    document.getElementById('btnSaveWeek').addEventListener('click', async () => {
+      const btn = document.getElementById('btnSaveWeek');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Salvando...';
+      try{
+        const payload = {};
+        DIAS_UTEIS.forEach(d => { payload[d] = AGENDA[d] || []; });
+        payload.updatedAt = new Date().toISOString();
+        payload.updatedBy = currentUser.email;
+        await setDoc(doc(db,'cronograma','agenda'), payload);
+        const tag = document.getElementById('savedTag');
+        tag.classList.add('show');
+        setTimeout(() => tag.classList.remove('show'), 3000);
+        toast('Cronograma salvo','success');
+      }catch(err){
+        console.error(err);
+        toast('Erro: '+err.message,'error');
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Salvar cronograma';
+      }
+    });
+
+    // ===== Checklist abertura =====
+    function renderChecklist(){
+      const list = document.getElementById('cliList');
+      list.innerHTML = CLI_BASE.map(item => {
+        const done = !!cliStatus[item.id];
+        return `<div class="cli-item ${done?'done':''}" data-id="${item.id}">
+          <div class="cli-icon">${item.icon}</div>
+          <div class="cli-body">
+            <div class="cli-lbl">${esc(item.lbl)}</div>
+            <div class="cli-sub">${esc(item.sub)}</div>
+          </div>
+          <div class="cli-check"></div>
+        </div>`;
+      }).join('');
+      list.querySelectorAll('[data-id]').forEach(el => {
+        el.addEventListener('click', () => toggleCli(el.dataset.id));
+      });
+      const done = CLI_BASE.filter(c => cliStatus[c.id]).length;
+      document.getElementById('stCli').textContent = done + '/' + CLI_BASE.length;
+    }
+
+    async function toggleCli(id){
+      cliStatus[id] = !cliStatus[id];
+      try{
+        await setDoc(doc(db,'cronograma_checklist',todayKey()), {
+          items: cliStatus,
+          updatedAt: new Date().toISOString(),
+          updatedBy: currentUser.email
+        }, {merge:true});
+      }catch(err){ toast('Erro: '+err.message,'error'); }
+    }
+
+    document.getElementById('btnResetCli').addEventListener('click', async () => {
+      if(!confirm('Resetar todos os itens do checklist de hoje?')) return;
+      try{
+        await setDoc(doc(db,'cronograma_checklist',todayKey()), {
+          items: {},
+          updatedAt: new Date().toISOString(),
+          updatedBy: currentUser.email
+        });
+        toast('Checklist resetado','success');
+      }catch(err){ toast('Erro: '+err.message,'error'); }
+    });
+  </script>
+</body>
+</html>

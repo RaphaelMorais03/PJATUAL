@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar — Amor Saúde Pirituba</title>
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body{overflow:hidden;}
+    .login-wrap{display:grid;grid-template-columns:1.05fr 1fr;min-height:100vh;}
+
+    /* ---- lado esquerdo (brand) ---- */
+    .brand-side{
+      background:linear-gradient(135deg,#1e1b4b 0%,#4f46e5 50%,#7c3aed 100%);
+      color:white;padding:56px;display:flex;flex-direction:column;justify-content:space-between;
+      position:relative;overflow:hidden;
+    }
+    .brand-side::before{
+      content:'';position:absolute;top:-30%;right:-20%;
+      width:600px;height:600px;border-radius:50%;
+      background:radial-gradient(circle,rgba(6,182,212,.25) 0%,transparent 60%);
+      pointer-events:none;
+    }
+    .brand-side::after{
+      content:'';position:absolute;bottom:-20%;left:-15%;
+      width:500px;height:500px;border-radius:50%;
+      background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 60%);
+      pointer-events:none;
+    }
+    .brand-top{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+    .brand-mark-lg{
+      width:54px;height:54px;border-radius:14px;
+      background:rgba(255,255,255,.15);backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.2);
+      display:grid;place-items:center;font-size:22px;
+    }
+    .brand-name{font-size:18px;font-weight:800;letter-spacing:-.3px;}
+    .brand-sub{font-size:12px;opacity:.7;}
+    .brand-mid{position:relative;z-index:1;}
+    .brand-eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+      border-radius:999px;padding:6px 14px;
+      font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+      margin-bottom:22px;backdrop-filter:blur(10px);
+    }
+    .brand-eyebrow i{color:#67e8f9;}
+    .brand-headline{
+      font-size:46px;font-weight:900;letter-spacing:-1.5px;line-height:1.05;margin-bottom:18px;
+    }
+    .brand-headline em{font-style:normal;color:#67e8f9;}
+    .brand-desc{font-size:15px;opacity:.78;line-height:1.6;max-width:430px;}
+    .brand-feats{display:flex;flex-direction:column;gap:14px;position:relative;z-index:1;}
+    .feat{display:flex;align-items:center;gap:12px;font-size:13px;opacity:.85;}
+    .feat-icon{
+      width:32px;height:32px;border-radius:9px;
+      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+      display:grid;place-items:center;font-size:13px;color:#67e8f9;
+    }
+
+    /* ---- lado direito (form) ---- */
+    .form-side{
+      background:var(--surface);
+      display:flex;align-items:center;justify-content:center;
+      padding:48px;overflow-y:auto;
+    }
+    .form-box{width:100%;max-width:400px;}
+    .form-title{font-size:28px;font-weight:800;letter-spacing:-.6px;margin-bottom:8px;}
+    .form-sub{font-size:14px;color:var(--text-mid);margin-bottom:32px;}
+
+    .form-stack{display:flex;flex-direction:column;gap:18px;}
+    .input-wrap{position:relative;}
+    .input-wrap i{
+      position:absolute;left:14px;top:50%;transform:translateY(-50%);
+      color:var(--text-soft);font-size:14px;pointer-events:none;
+    }
+    .input-wrap input{
+      width:100%;padding:13px 14px 13px 42px;
+      border:1.5px solid var(--border);border-radius:12px;
+      font-size:14px;color:var(--text);background:var(--surface);
+      outline:none;transition:all .18s;
+    }
+    .input-wrap input:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px rgba(79,70,229,.12);
+    }
+    .toggle-pwd{
+      position:absolute;right:12px;top:50%;transform:translateY(-50%);
+      color:var(--text-soft);background:none;border:none;
+      width:28px;height:28px;border-radius:6px;cursor:pointer;
+    }
+    .toggle-pwd:hover{color:var(--primary);background:var(--primary-soft);}
+
+    .err-box{
+      background:var(--danger-bg);color:var(--danger);
+      border:1px solid #fecaca;border-radius:11px;
+      padding:11px 14px;font-size:13px;font-weight:600;
+      display:none;align-items:center;gap:10px;
+    }
+    .err-box.show{display:flex;}
+
+    .btn-login{
+      width:100%;padding:14px;font-size:14px;font-weight:700;
+      background:var(--primary);color:white;border-radius:12px;
+      box-shadow:0 8px 22px rgba(79,70,229,.32);
+      transition:all .18s;
+      display:flex;align-items:center;justify-content:center;gap:10px;
+    }
+    .btn-login:hover:not(:disabled){background:var(--primary-dark);transform:translateY(-1px);}
+    .btn-login:disabled{opacity:.6;cursor:not-allowed;}
+
+    .form-foot{text-align:center;margin-top:26px;font-size:12px;color:var(--text-soft);}
+
+    @media(max-width:900px){
+      .login-wrap{grid-template-columns:1fr;}
+      .brand-side{display:none;}
+      body{overflow:auto;}
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+
+    <!-- Lado esquerdo: brand -->
+    <aside class="brand-side">
+      <div class="brand-top">
+        <div class="brand-mark-lg"><i class="fa-solid fa-heart-pulse"></i></div>
+        <div>
+          <div class="brand-name">Amor Saúde</div>
+          <div class="brand-sub">Unidade Pirituba</div>
+        </div>
+      </div>
+
+      <div class="brand-mid">
+        <div class="brand-eyebrow"><i class="fa-solid fa-shield-halved"></i> Acesso interno</div>
+        <h1 class="brand-headline">Gestão da clínica em <em>tempo real</em>.</h1>
+        <p class="brand-desc">Cronograma, exames, fechamento, financeiro e orçamentos — tudo conectado em um só portal, com sincronização entre todos os usuários.</p>
+      </div>
+
+      <div class="brand-feats">
+        <div class="feat"><div class="feat-icon"><i class="fa-solid fa-bolt"></i></div>Atualizações em tempo real entre operadores</div>
+        <div class="feat"><div class="feat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>Histórico completo de toda movimentação</div>
+        <div class="feat"><div class="feat-icon"><i class="fa-solid fa-lock"></i></div>Acesso protegido por autenticação</div>
+      </div>
+    </aside>
+
+    <!-- Lado direito: formulário -->
+    <main class="form-side">
+      <div class="form-box">
+        <h2 class="form-title">Bem-vindo de volta 👋</h2>
+        <p class="form-sub">Entre com suas credenciais para acessar o portal.</p>
+
+        <form id="loginForm" class="form-stack" novalidate>
+          <div class="input-wrap">
+            <i class="fa-solid fa-envelope"></i>
+            <input id="email" type="email" placeholder="seu@email.com" autocomplete="email" required>
+          </div>
+
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock"></i>
+            <input id="password" type="password" placeholder="Sua senha" autocomplete="current-password" required>
+            <button type="button" class="toggle-pwd" id="togglePwd" aria-label="Mostrar senha"><i class="fa-solid fa-eye"></i></button>
+          </div>
+
+          <div class="err-box" id="errBox"><i class="fa-solid fa-circle-exclamation"></i><span id="errMsg"></span></div>
+
+          <button type="submit" class="btn-login" id="loginBtn">
+            <span id="btnLabel">Entrar</span>
+          </button>
+        </form>
+
+        <div class="form-foot">
+          Problemas para acessar? Fale com o administrador do sistema.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { auth } from './js/firebase-config.js';
+    import {
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    // se já estiver logado, redireciona direto
+    onAuthStateChanged(auth, user => {
+      if(user) window.location.replace('portal.html');
+    });
+
+    const form    = document.getElementById('loginForm');
+    const emailEl = document.getElementById('email');
+    const passEl  = document.getElementById('password');
+    const errBox  = document.getElementById('errBox');
+    const errMsg  = document.getElementById('errMsg');
+    const btn     = document.getElementById('loginBtn');
+    const btnLbl  = document.getElementById('btnLabel');
+    const toggle  = document.getElementById('togglePwd');
+
+    toggle.addEventListener('click', () => {
+      const isPwd = passEl.type === 'password';
+      passEl.type = isPwd ? 'text' : 'password';
+      toggle.querySelector('i').className = isPwd ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+
+    function showError(msg){
+      errMsg.textContent = msg;
+      errBox.classList.add('show');
+    }
+    function clearError(){ errBox.classList.remove('show'); }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      clearError();
+      const email = emailEl.value.trim();
+      const pwd   = passEl.value;
+      if(!email || !pwd){ showError('Preencha email e senha.'); return; }
+
+      btn.disabled = true;
+      btnLbl.innerHTML = '<span class="spinner"></span> Entrando...';
+
+      try{
+        await signInWithEmailAndPassword(auth, email, pwd);
+        window.location.replace('portal.html');
+      }catch(err){
+        const map = {
+          'auth/invalid-email':'Email inválido.',
+          'auth/user-not-found':'Usuário não encontrado.',
+          'auth/wrong-password':'Senha incorreta.',
+          'auth/invalid-credential':'Email ou senha incorretos.',
+          'auth/too-many-requests':'Muitas tentativas. Tente novamente em alguns minutos.',
+          'auth/network-request-failed':'Falha de conexão. Verifique sua internet.'
+        };
+        showError(map[err.code] || 'Erro ao entrar. Tente novamente.');
+        btn.disabled = false;
+        btnLbl.textContent = 'Entrar';
+      }
+    });
+  </script>
+</body>
+</html>
