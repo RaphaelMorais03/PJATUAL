@@ -8,7 +8,55 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
+    .import-btn {
+      width: 100%; margin-top: 10px; padding: 11px;
+      background: #fff; color: #4f46e5; border: 1.5px dashed #4f46e5;
+      border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .import-btn:hover { background: #eef2ff; }
+    .file-input { display: none; }
+
+    .dup-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,.7); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
+    }
+    .dup-overlay.show { display: flex; }
+    .dup-modal {
+      background: #fff; border-radius: 14px; max-width: 520px; width: 100%;
+      padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,.3);
+    }
+    .dup-modal h3 { margin: 0 0 8px; font-size: 18px; color: #0f172a; }
+    .dup-modal .sub { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+    .dup-info { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+    .dup-info b { color: #92400e; }
+    .dup-info .row { font-size: 13px; color: #78350f; margin: 3px 0; }
+    .dup-actions { display: flex; flex-direction: column; gap: 8px; }
+    .dup-actions button {
+      padding: 11px 14px; border-radius: 9px; border: none; font-weight: 600;
+      cursor: pointer; font-size: 13px; text-align: left;
+    }
+    .dup-actions .skip { background: #f1f5f9; color: #475569; }
+    .dup-actions .skip:hover { background: #e2e8f0; }
+    .dup-actions .update { background: #4f46e5; color: #fff; }
+    .dup-actions .update:hover { background: #4338ca; }
+    .dup-actions .force { background: #fff; color: #db2777; border: 1px solid #db2777; }
+    .dup-actions .force:hover { background: #fdf2f8; }
+    .dup-actions .all-label { font-size: 12px; color: #64748b; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+    .dup-counter { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 12px; }
+
+    .import-progress {
+      position: fixed; inset: 0; background: rgba(15,23,42,.7); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1999;
+    }
+    .import-progress.show { display: flex; }
+    .import-progress .box {
+      background: #fff; border-radius: 14px; padding: 30px 40px; text-align: center; min-width: 320px;
+    }
+    .import-progress .spinner-lg { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .back-link{
       display:inline-flex;align-items:center;gap:7px;
       font-size:13px;color:var(--text-mid);font-weight:600;
@@ -182,9 +230,26 @@
             <button type="submit" class="btn btn-primary" id="saveBtn">
               <i class="fa-solid fa-check"></i><span>Cadastrar exame</span>
             </button>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
+            <button type="button" class="import-btn" id="importBtn">
+              <i class="fa-solid fa-file-arrow-up"></i> Importar planilha de exames
+            </button>
           </form>
         </div>
       </section>
+
+      <!-- Modal de duplicado -->
+      <div class="dup-overlay" id="dupOverlay">
+        <div class="dup-modal" id="dupModal"></div>
+      </div>
+
+      <!-- Modal de progresso -->
+      <div class="import-progress" id="importProgress">
+        <div class="box">
+          <div class="spinner-lg"></div>
+          <div id="importProgressText">Processando planilha...</div>
+        </div>
+      </div>
 
       <!-- ===== Lista (pendentes / histórico) ===== -->
       <section>
@@ -221,7 +286,7 @@
     import { db, auth } from './firebase-config.js';
     import { requireAuth, logout, initialsFor } from './auth-guard.js';
     import {
-      collection, addDoc, doc, updateDoc,
+      collection, addDoc, doc, updateDoc, getDocs,
       query, where, orderBy, onSnapshot, serverTimestamp, limit
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -413,6 +478,338 @@
       el.innerHTML = `<i class="fa-solid fa-${kind==='success'?'circle-check':'circle-exclamation'}"></i> ${esc(msg)}`;
       document.body.appendChild(el);
       setTimeout(()=>el.remove(), 3200);
+    }
+
+    // ============ IMPORTADOR DE PLANILHA ============
+    import {
+      getDocs, query as qFn, where as wFn, writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const fileInput = document.getElementById('fileInput');
+    const importBtn = document.getElementById('importBtn');
+    const dupOverlay = document.getElementById('dupOverlay');
+    const dupModal = document.getElementById('dupModal');
+    const progressEl = document.getElementById('importProgress');
+    const progressText = document.getElementById('importProgressText');
+
+    importBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (ev) => {
+      const file = ev.target.files[0];
+      if (!file) return;
+      progressEl.classList.add('show');
+      progressText.textContent = 'Lendo planilha...';
+      try {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+        progressText.textContent = 'Extraindo exames...';
+        const parsed = parseRetiradaXlsx(wb);
+        if (parsed.length === 0) {
+          progressEl.classList.remove('show');
+          toast('Nenhum exame encontrado na planilha', 'error');
+          return;
+        }
+        progressText.textContent = `Verificando ${parsed.length} exames no banco...`;
+        const existing = await loadExistingPatients();
+        progressEl.classList.remove('show');
+        await processImport(parsed, existing);
+      } catch (err) {
+        console.error(err);
+        progressEl.classList.remove('show');
+        toast('Erro: ' + err.message, 'error');
+      } finally {
+        ev.target.value = '';
+      }
+    });
+
+    async function loadExistingPatients() {
+      const snap = await getDocs(collection(db, 'exames'));
+      const map = new Map();
+      snap.forEach(d => {
+        const data = d.data();
+        const key = normalizeName(data.patient || '') + '|' + normalizeName(data.examType || '');
+        map.set(key, { id: d.id, ...data });
+      });
+      return map;
+    }
+    function normalizeName(s) {
+      return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    async function processImport(parsed, existing) {
+      let imported = 0, skipped = 0, updated = 0, duplicated = 0;
+      let applyAll = null; // 'skip' | 'update' | 'force'
+
+      for (let i = 0; i < parsed.length; i++) {
+        const item = parsed[i];
+        const key = normalizeName(item.patient) + '|' + normalizeName(item.examType);
+        const dup = existing.get(key);
+        let action;
+        if (dup) {
+          if (applyAll) {
+            action = applyAll;
+          } else {
+            const choice = await askDuplicateAction(item, dup, i + 1, parsed.length);
+            action = choice.action;
+            if (choice.applyToAll) applyAll = action;
+          }
+          if (action === 'skip') { skipped++; continue; }
+          if (action === 'update') {
+            await updateDoc(doc(db, 'exames', dup.id), {
+              status: item.status,
+              retrievedAt: item.retrievedAt ? new Date(item.retrievedAt) : null,
+              retrievedBy: item.retrievedBy || null,
+              obs: item.obs || dup.obs || '',
+              updatedAt: serverTimestamp(),
+              updatedBy: currentUser.email
+            });
+            updated++;
+            continue;
+          }
+          // force = create as duplicate
+          duplicated++;
+        }
+        await addDoc(collection(db, 'exames'), {
+          patient: item.patient,
+          examType: item.examType,
+          phone: '',
+          obs: item.obs || '',
+          status: item.status,
+          createdAt: serverTimestamp(),
+          createdBy: currentUser.email,
+          createdByUid: currentUser.uid,
+          retrievedAt: item.retrievedAt ? new Date(item.retrievedAt) : null,
+          retrievedBy: item.retrievedBy || null,
+          retrievedByUid: null
+        });
+        imported++;
+      }
+
+      toast(`Importação concluída: ${imported} novos, ${updated} atualizados, ${skipped} pulados, ${duplicated} duplicados`, 'success');
+    }
+
+    function askDuplicateAction(newItem, existing, idx, total) {
+      return new Promise(resolve => {
+        const oldDate = existing.retrievedAt && existing.retrievedAt.toDate ? existing.retrievedAt.toDate().toLocaleDateString('pt-BR') : (existing.status === 'pendente' ? 'Pendente' : '—');
+        const newDate = newItem.retrievedAt ? new Date(newItem.retrievedAt).toLocaleDateString('pt-BR') : (newItem.status === 'pendente' ? 'Pendente' : '—');
+        dupModal.innerHTML = `
+          <h3>Exame duplicado encontrado</h3>
+          <div class="sub">${idx} de ${total} • Já existe um exame com este paciente e tipo</div>
+          <div class="dup-info">
+            <b>${esc(newItem.patient)}</b>
+            <div class="row">📋 Tipo: ${esc(newItem.examType)}</div>
+            <div class="row">📅 Existente: <b>${oldDate}</b> (${existing.status})</div>
+            <div class="row">📅 Da planilha: <b>${newDate}</b> (${newItem.status})</div>
+          </div>
+          <div class="dup-actions">
+            <button class="skip" data-act="skip">⊘ Pular este exame</button>
+            <button class="update" data-act="update">↻ Atualizar com dados da planilha</button>
+            <button class="force" data-act="force">+ Importar mesmo assim (cria duplicado)</button>
+            <label class="all-label">
+              <input type="checkbox" id="applyAllChk"> Aplicar a todos os próximos duplicados
+            </label>
+          </div>
+          <div class="dup-counter">${idx}/${total}</div>
+        `;
+        dupOverlay.classList.add('show');
+        dupModal.querySelectorAll('[data-act]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const applyToAll = dupModal.querySelector('#applyAllChk').checked;
+            dupOverlay.classList.remove('show');
+            resolve({ action: btn.dataset.act, applyToAll });
+          });
+        });
+      });
+    }
+
+    // ===== Parser unificado (detecta formato automaticamente) =====
+    // Suporta:
+    //   Formato NEURO: 2 tabelas lado a lado (cols 0-5 e 7-12), tipo via seção (EEG/ENMG/POTENCIAL)
+    //   Formato ULTRASSOM: 1 tabela (6 cols), tipo via coluna "EXAME (S)" linha a linha
+    //   Qualquer outro cabeçalho com "NOME DO PACIENTE" também funciona
+    function parseRetiradaXlsx(wb) {
+      const out = [];
+      for (const sheetName of wb.SheetNames) {
+        if (/página/i.test(sheetName)) continue;
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+        if (!rows || rows.length < 3) continue;
+
+        // 1. Achar linha de cabeçalho (contém "NOME DO PACIENTE")
+        const leftHeader = findHeader(rows, 0);
+        if (!leftHeader) continue;
+
+        // 2. Procurar uma SEGUNDA tabela à direita na mesma linha de cabeçalho
+        const headerRow = rows[leftHeader.rowIdx];
+        let rightHeader = null;
+        for (let j = leftHeader.cols.name + 1; j < headerRow.length; j++) {
+          const c = headerRow[j];
+          if (c && String(c).toUpperCase().includes('NOME DO PACIENTE')) {
+            rightHeader = parseHeaderCols(headerRow, j);
+            break;
+          }
+        }
+
+        // 3. Detectar seção (tipo de exame) acima de cada cabeçalho
+        let leftSection = findSectionAbove(rows, leftHeader.rowIdx, leftHeader.cols.name) || 'EXAME';
+        let rightSection = rightHeader ? (findSectionAbove(rows, leftHeader.rowIdx, rightHeader.name) || 'POTENCIAL EVOCADO') : null;
+        let curLeft = leftSection;
+
+        // 4. Processar linhas de dados
+        for (let i = leftHeader.rowIdx + 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row) continue;
+
+          // Detectar mudança de seção em col 0 (títulos tipo "RESULTADO DE ELETRONEUROMIOGRAFIA")
+          const c0u = String(row[0] || '').toUpperCase();
+          if (c0u.includes('RESULTADO') && (c0u.includes('ELETRONEURO') || c0u.includes('ENMG'))) { curLeft = 'ENMG'; continue; }
+          if (c0u.includes('RESULTADO') && (c0u.includes('ELETRENCEFAL') || c0u.includes('ELETROENCEFAL'))) { curLeft = 'EEG'; continue; }
+          if (c0u.includes('NOME DO PACIENTE')) continue;
+
+          // --- TABELA ESQUERDA ---
+          processRow(row, leftHeader.cols, curLeft, out);
+          // --- TABELA DIREITA (se existir) ---
+          if (rightHeader) processRow(row, rightHeader, rightSection, out);
+        }
+      }
+      return out;
+    }
+
+    function processRow(row, cols, defaultType, out) {
+      const nameCell = cols.name != null ? row[cols.name] : null;
+      const name = cleanName(nameCell);
+      if (!name || !isPatientName(name)) return;
+
+      // Tipo do exame: coluna "EXAME (S)" se existir, senão a seção
+      let examType = defaultType;
+      if (cols.exame != null && row[cols.exame]) {
+        const e = cleanName(row[cols.exame]);
+        if (e && e.length < 80) examType = e.toUpperCase();
+      }
+
+      const dataRetirada = cols.data != null ? row[cols.data] : null;
+      const quemRetirou = cols.quem != null ? row[cols.quem] : null;
+      const colaborador = cols.colab != null ? row[cols.colab] : null;
+      const recepCell = cols.recep != null ? row[cols.recep] : null;
+
+      const retDate = parseDateField(dataRetirada);
+      const retName = cleanName(quemRetirou);
+      const colab = cleanName(colaborador);
+      const dataStr = String(dataRetirada || '');
+      const wasRetrieved = !!retDate || /RETIROU|ENTREGUE/i.test(dataStr);
+
+      let obs = '';
+      if (colab) obs += `Colab: ${colab}`;
+      const recep = parseDateField(recepCell);
+      if (recep) obs += (obs ? ' • ' : '') + `Recepção: ${new Date(recep).toLocaleDateString('pt-BR')}`;
+
+      out.push({
+        patient: toTitleCase(name),
+        examType: examType,
+        status: wasRetrieved ? 'retirado' : 'pendente',
+        retrievedAt: retDate,
+        retrievedBy: wasRetrieved ? (retName || 'Importado') : null,
+        obs: obs
+      });
+    }
+
+    // Procura a linha do cabeçalho varrendo as primeiras linhas
+    function findHeader(rows, startCol) {
+      const maxScan = Math.min(8, rows.length);
+      for (let i = 0; i < maxScan; i++) {
+        const row = rows[i];
+        if (!row) continue;
+        for (let j = startCol; j < row.length; j++) {
+          if (row[j] && String(row[j]).toUpperCase().includes('NOME DO PACIENTE')) {
+            return { rowIdx: i, cols: parseHeaderCols(row, j) };
+          }
+        }
+      }
+      return null;
+    }
+
+    // Dada a linha do header e a posição de "NOME DO PACIENTE", mapeia cada coluna
+    function parseHeaderCols(headerRow, nameCol) {
+      const cols = { name: nameCol };
+      // Varre colunas DEPOIS do nome, até achar outro "NOME DO PACIENTE" ou acabar a linha
+      for (let k = nameCol + 1; k < headerRow.length; k++) {
+        const raw = headerRow[k];
+        if (!raw) continue;
+        const u = String(raw).toUpperCase();
+        if (u.includes('NOME DO PACIENTE')) break; // início da tabela direita
+        if (u.includes('EXAME') && (u.includes('(S)') || u.includes('(S )') || u.trim() === 'EXAMES' || /\bEXAME\b/.test(u))) {
+          if (cols.exame == null) cols.exame = k;
+        }
+        if (u.includes('DATA') && u.includes('RETIRADA')) cols.data = k;
+        else if (u.includes('QUEM RETIROU')) cols.quem = k;
+        else if (u.includes('COLABORADOR') || u.includes('ATENDENTE')) cols.colab = k;
+        else if (u.includes('ENTREGUE') && (u.includes('EMAIL') || u.includes('E-MAIL') || u.includes('E MAIL'))) cols.email = k;
+        else if (u.includes('ENTREGUE') && u.includes('RECEP')) cols.recep = k;
+      }
+      return cols;
+    }
+
+    // Procura acima do header um título de seção (EEG/ENMG/POTENCIAL EVOCADO)
+    function findSectionAbove(rows, headerIdx, col) {
+      for (let i = headerIdx; i >= 0; i--) {
+        const row = rows[i];
+        if (!row || col >= row.length) continue;
+        const c = row[col];
+        if (!c) continue;
+        const u = String(c).toUpperCase();
+        if (u.includes('ENMG') || u.includes('ELETRONEURO')) return 'ENMG';
+        if (u.includes('ELETRENCEFAL') || u.includes('ELETROENCEFAL') || /\bEEG\b/.test(u)) return 'EEG';
+        if (u.includes('POTENCIAL') && (u.includes('EVOCADO') || u.includes('AUDITIV'))) return 'POTENCIAL EVOCADO';
+      }
+      return null;
+    }
+
+    function cleanName(v) {
+      if (v == null) return '';
+      return String(v).replace(/\\n/g, ' ').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function isPatientName(s) {
+      if (!s || s.length < 4) return false;
+      const u = s.toUpperCase();
+      const bad = ['NOME DO PACIENTE', 'ENTREGUES', 'DATA DA RETIRADA', 'DATA RETIRADA',
+                   'QUEM RETIROU', 'COLABORADOR', 'ATENDENTE',
+                   'EXAME', 'EEG', 'ENMG', 'POTENCIAL', 'EVOCADO', 'RESULTADO', 'ELETRO',
+                   '.', ','];
+      for (const b of bad) if (u.startsWith(b)) return false;
+      // Deve ter pelo menos 2 palavras e conter letras
+      if (s.split(/\s+/).length < 2) return false;
+      if (!/[A-Za-zÀ-ÿ]/.test(s)) return false;
+      return true;
+    }
+
+    function parseDateField(v) {
+      if (v == null || v === '') return null;
+      if (v instanceof Date) {
+        if (isNaN(v.getTime())) return null;
+        const y = v.getFullYear();
+        if (y < 2020 || y > 2030) return null;
+        return v.toISOString();
+      }
+      const s = String(v).trim();
+      if (!s) return null;
+      if (/N[AÃ]O ANOTAD|FALTA/i.test(s) && !/\d{2}\/\d{2}/.test(s)) return null;
+      const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+      if (m) {
+        let [_, d, mo, y] = m;
+        if (y.length === 2) y = '20' + y;
+        if (y.length === 3) y = '20' + y.slice(-2);
+        const date = new Date(parseInt(y), parseInt(mo) - 1, parseInt(d));
+        if (isNaN(date.getTime())) return null;
+        const yr = date.getFullYear();
+        if (yr < 2020 || yr > 2030) return null;
+        return date.toISOString();
+      }
+      return null;
+    }
+
+    function toTitleCase(s) {
+      return s.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase()).replace(/\s+/g, ' ').trim();
     }
   </script>
 </body>
